@@ -12,94 +12,59 @@ knitr::opts_chunk$set(
   out.width = "50%"
 )
 ```
-# isoband
+# ggisoband
 
-[![Build Status](https://travis-ci.org/clauswilke/isoband.svg?branch=master)](https://travis-ci.org/clauswilke/isoband)
-[![Coverage Status](https://img.shields.io/codecov/c/github/clauswilke/isoband/master.svg)](https://codecov.io/github/clauswilke/isoband?branch=master)
-
-
-Generate contour lines (isolines) and contour polygons (isobands) from regularly spaced grids containing elevation data.
+This package provides a ggplot2 interface to the isoband library which can generate contour lines (isolines) and contour polygons (isobands) from regularly spaced grids containing elevation data.
   
 ## Installation
 
 Install from github with:
 
 ``` r
-devtools::install_github("clauswilke/isoband")
+devtools::install_github("clauswilke/ggisoband")
 ```
 
-## Example
+## Examples
 
-We begin with a few simple examples. The two main workhorses of the package are the functions `isolines()` and `isobands()`, respectively. They return a list of isolines/isobands for each isolevel specified. Each isoline/isoband consists of vectors of x and y coordinates, as well as a vector of ids specifying which sets of coordinates should be connected. This format can be handed directly to `grid.polyline()`/`grid.path()` for drawing (see below).
+We can draw contour lines and contour bands, including partially transparent contour lines.
 
-```{r basic-example, fig.asp = 1}
-library(isoband)
+```{r}
+library(ggplot2)
+library(ggisoband)
 
-m <- matrix(c(0, 0, 0, 0, 0,
-              0, 1, 2, 1, 0,
-              0, 1, 2, 0, 0,
-              0, 1, 0, 1, 0,
-              0, 0, 0, 0, 0), 5, 5, byrow = TRUE)
+volcano3d <- reshape2::melt(volcano)
+names(volcano3d) <- c("x", "y", "z")
 
-isolines(1:ncol(m), 1:nrow(m), m, 0.5)
+ggplot(volcano3d, aes(x, y, z = z)) +
+  geom_isobands(aes(color = stat(zmin)), fill = NA) +
+  scale_color_viridis_c() +
+  coord_cartesian(expand = FALSE) +
+  theme_bw()
 
-isobands(1:ncol(m), 1:nrow(m), m, 0.5, 1.5)
+ggplot(volcano3d, aes(x, y, z = z)) +
+  geom_isobands(aes(fill = stat(zmin)), color = NA) +
+  scale_fill_viridis_c(guide = "legend") +
+  coord_cartesian(expand = FALSE) +
+  theme_bw()
+
+# set polygon_outline = FALSE when drawing filled polygons
+# with alpha transparency
+ggplot(volcano3d, aes(x, y, z = z)) +
+  geom_isobands(
+    aes(fill = stat(zmin)), color = NA,
+    alpha = 0.5, polygon_outline = FALSE
+  ) +
+  scale_fill_viridis_c(guide = "legend") +
+  coord_cartesian(expand = FALSE) +
+  theme_bw()
 ```
 
-The function `plot_iso()` is a convenience function for debugging and testing.
-```{r basic-example-plot, fig.asp = 1}
-plot_iso(m, 0.5, 1.5)
+
+We can also draw contour bands derived from a 2D density estimation.
+
+```{r}
+ggplot(faithful, aes(eruptions, waiting)) +
+  geom_density_bands(aes(fill = stat(density)), color = "gray40", alpha = 0.7, size = 0.2) +
+  geom_point(shape = 21, fill = "white") +
+  scale_fill_viridis_c(guide = "legend")
 ```
-
-A few more simple examples. Missing values and disconnected areas are all handled correctly.
-```{r basic-plotting, fig.asp = 1}
-m <- matrix(c(0, 0, 0, 0, 0, 0,
-              0, 0, 0, 1, 1, 0,
-              0, 0, 1, 1, 1, 0,
-              0, 1, 1, 0, 0, 0,
-              0, 0, 0, 1, 0, 0,
-              0, 0, 0, 0, 0, 0), 6, 6, byrow = TRUE)
-plot_iso(m, 0.5, 1.5)
-
-m <- matrix(c(NA, NA, NA, 0, 0, 0,
-              NA, NA, NA, 1, 1, 0,
-               0,  0,  1, 1, 1, 0,
-               0,  1,  1, 0, 0, 0,
-               0,  0,  0, 1, 0, 0,
-               0,  0,  0, 0, 0, 0), 6, 6, byrow = TRUE)
-plot_iso(m, 0.5, 1.5)
-
-m <- matrix(c(0, 0, 1, 1,
-              0, 1, 1, 1,
-              1, 1, 0, 0,
-              0, 0, 0.8, 0), 4, 4, byrow = TRUE)
-plot_iso(m, 0.5, 1.5)
-```
-
-The algorithm has no problem with larger datasets. Let's calculate a few isolines/isobands for the volcano dataset.
-```{r volcano, fig.asp = 1, out.width = "75%"}
-m <- volcano
-b <- isobands((1:ncol(m))/(ncol(m)+1), (nrow(m):1)/(nrow(m)+1), m, c(80, 120, 150), c(110, 140, 152))
-l <- isolines((1:ncol(m))/(ncol(m)+1), (nrow(m):1)/(nrow(m)+1), m, c(110, 120, 140, 150, 152))
-
-library(grid)
-grid.newpage()
-grid.path(b[[1]]$x, b[[1]]$y, b[[1]]$id, gp = gpar(fill = "cornsilk", col = NA))
-grid.path(b[[2]]$x, b[[2]]$y, b[[2]]$id, gp = gpar(fill = "lightblue", col = NA))
-grid.path(b[[3]]$x, b[[3]]$y, b[[3]]$id, gp = gpar(fill = "tomato", col = NA))
-for (i in seq_along(l)) {
-  grid.polyline(l[[i]]$x, l[[i]]$y, l[[i]]$id)
-}
-```
-
-Isolining is about as fast as `grDevices::contourLines()`, isobanding is approximately 2.5 times slower.
-
-```{r benchmark}
-microbenchmark::microbenchmark(
-  grDevices::contourLines(1:ncol(volcano), 1:nrow(volcano), volcano, levels = 10*(10:18)),
-  isolines(1:ncol(volcano), 1:nrow(volcano), volcano, 10*(10:18)),
-  isobands(1:ncol(volcano), 1:nrow(volcano), volcano, 10*(9:17), 10*(10:18))
-)
-
-```
-

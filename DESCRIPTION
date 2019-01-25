@@ -1,5 +1,5 @@
-Package: isoband
-Title: Generate isolines and isobands from regularly spaced elevation grids
+Package: ggisoband
+Title: Drawing isolines and isobands with 'ggplot2'
 Version: 0.0.0.9000
 Authors@R: 
     person(given = "Claus",
@@ -11,11 +11,8 @@ Description: Generate contour lines (isolines) and contour polygons (isobands) f
 License: GPL-2 + file LICENSE
 Encoding: UTF-8
 LazyData: true
-LinkingTo: 
-    Rcpp,
-    testthat
 Imports: 
-    Rcpp,
+    isoband,
     rlang,
     grid,
     ggplot2,
@@ -29,4 +26,5 @@ Suggests:
     testthat,
     covr,
     reshape2
-SystemRequirements: C++11
+Remotes:
+    clauswilke/isoband
