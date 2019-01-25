@@ -67,8 +67,8 @@ We can also draw contour bands derived from a 2D density estimation.
 
 ``` r
 ggplot(faithful, aes(eruptions, waiting)) +
-  geom_density_bands(aes(fill = stat(density)), color = "gray40", alpha = 0.5, size = 0.2) +
-  geom_point(size = 0.3) +
+  geom_density_bands(aes(fill = stat(density)), color = "gray40", alpha = 0.7, size = 0.2) +
+  geom_point(shape = 21, fill = "white") +
   scale_fill_viridis_c(guide = "legend")
 ```
 
