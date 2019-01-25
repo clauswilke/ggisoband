@@ -18,7 +18,7 @@ devtools::install_github("clauswilke/ggisoband")
 ## Examples
 
 We can draw contour lines and contour bands, including partially
-transparent contour lines.
+transparent contour bands.
 
 ``` r
 library(ggplot2)
