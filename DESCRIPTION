@@ -26,5 +26,4 @@ Suggests:
     testthat,
     covr,
     reshape2
-Remotes:
-    clauswilke/isoband
+
